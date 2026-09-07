@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BuzzIn · Multiplayer Buzzer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            background: #0b0e1a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .card {
+            background: #171f2e;
+            border-radius: 40px;
+            padding: 2rem 2rem 2.2rem;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            border: 1px solid #2d3a4e;
+            transition: 0.2s;
+        }
+        h1 {
+            color: #d6e2f5;
+            font-weight: 600;
+            font-size: 2rem;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 0.5rem;
+            border-bottom: 2px dashed #2f3f58;
+            padding-bottom: 0.75rem;
+        }
+        h1 small {
+            font-size: 0.9rem;
+            font-weight: 400;
+            color: #7d92b5;
+            margin-left: auto;
+        }
+        .status-panel {
+            background: #10161f;
+            border-radius: 60px;
+            padding: 0.9rem 1.8rem;
+            margin: 1.2rem 0 1.8rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #2b3850;
+        }
+        .status-label {
+            color: #a4bbdd;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        .winner-display {
+            background: #242f42;
+            padding: 0.3rem 1.4rem;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: #f6c96e;
+            box-shadow: inset 0 0 0 1px #3f5070;
+            min-width: 140px;
+            text-align: center;
+        }
+        .winner-display.waiting {
+            color: #6e86ad;
+            font-weight: 400;
+            font-size: 1.1rem;
+        }
+        .buzzer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 18px;
+            margin: 28px 0 20px;
+        }
+        .buzzer-btn {
+            background: #1f2a3d;
+            border: none;
+            border-radius: 30px;
+            padding: 1.2rem 0.5rem;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: #c8daf5;
+            box-shadow: 0 8px 0 #0e131f, 0 8px 16px rgba(0,0,0,0.4);
+            transition: all 0.08s ease-in;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            border: 1px solid #33415e;
+            letter-spacing: 0.5px;
+            line-height: 1.3;
+            position: relative;
+            touch-action: manipulation;
+        }
+        .buzzer-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #0e131f;
+        }
+        .buzzer-btn .player-name {
+            font-size: 0.9rem;
+            font-weight: 400;
+            color: #8aa2cc;
+            background: #111a28;
+            padding: 0.2rem 1rem;
+            border-radius: 40px;
+            margin-top: 4px;
+        }
+        .buzzer-btn .buzz-icon {
+            font-size: 2rem;
+            line-height: 1;
+        }
+        .buzzer-btn.disabled {
+            opacity: 0.55;
+            filter: grayscale(0.4);
+            transform: translateY(4px);
+            box-shadow: 0 4px 0 #0e131f;
+            pointer-events: none;
+        }
+        .buzzer-btn.winner-highlight {
+            background: #f5b042;
+            border-color: #ffd966;
+            color: #111a28;
+            box-shadow: 0 0 0 2px #f5b042, 0 8px 0 #7a5d1f;
+            transform: scale(1.02);
+        }
+        .buzzer-btn.winner-highlight .player-name {
+            background: #222f42;
+            color: #fae6b0;
+        }
+        .buzzer-btn.winner-highlight .buzz-icon {
+            filter: drop-shadow(0 0 6px #ffb82e);
+        }
+        .reset-area {
+            display: flex;
+            justify-content: center;
+            margin: 1.8rem 0 0.2rem;
+        }
+        .reset-btn {
+            background: #2f3d59;
+            border: none;
+            border-radius: 60px;
+            padding: 0.9rem 2.8rem;
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: #d2e0fc;
+            border: 1px solid #4d6188;
+            box-shadow: 0 6px 0 #121b2b;
+            transition: 0.08s linear;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: 0.7px;
+            touch-action: manipulation;
+        }
+        .reset-btn:active {
+            transform: translateY(5px);
+            box-shadow: 0 1px 0 #121b2b;
+        }
+        .reset-btn i {
+            font-size: 1.3rem;
+        }
+        .footer-info {
+            color: #4b5f82;
+            text-align: center;
+            margin-top: 1.8rem;
+            font-size: 0.85rem;
+            border-top: 1px solid #233045;
+            padding-top: 1.2rem;
+            letter-spacing: 0.4px;
+        }
+        .player-count {
+            background: #1d273b;
+            padding: 0.2rem 1.2rem;
+            border-radius: 40px;
+            color: #b3c9f0;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        @media (max-width: 500px) {
+            .card { padding: 1.5rem; }
+            .buzzer-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .buzzer-btn { padding: 1rem 0.2rem; font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card" id="app">
+    <h1>
+        ⚡ BUZZER
+        <small>multiplayer</small>
+    </h1>
+
+    <!-- status + winner -->
+    <div class="status-panel">
+        <span class="status-label">🏆 First buzz</span>
+        <span class="winner-display waiting" id="winnerDisplay">⌛ waiting...</span>
+    </div>
+
+    <!-- dynamic buzzer grid -->
+    <div class="buzzer-grid" id="buzzerGrid"></div>
+
+    <!-- reset -->
+    <div class="reset-area">
+        <button class="reset-btn" id="resetBtn">⟳ New round</button>
+    </div>
+    <div class="footer-info">
+        <span id="playerCountDisplay" class="player-count">👥 0 players</span>
+        &nbsp;·&nbsp; click your buzzer — first one wins
+    </div>
+</div>
+
+<script>
+    (function() {
+        "use strict";
+
+        // ---------- CONFIG ----------
+        // Add or remove players here. Each player gets a buzzer.
+        const PLAYERS = [
+            { id: 'alex', name: 'Alex', emoji: '🦊' },
+            { id: 'bella', name: 'Bella', emoji: '🐼' },
+            { id: 'charlie', name: 'Charlie', emoji: '🐧' },
+            { id: 'dana', name: 'Dana', emoji: '🦄' },
+            // you can add more: { id: 'eve', name: 'Eve', emoji: '🐱' }
+        ];
+
+        // ---------- STATE ----------
+        let winnerId = null;          // null = no winner yet
+        let buzzerEnabled = true;     // false after someone buzzes
+
+        // DOM refs
+        const gridEl = document.getElementById('buzzerGrid');
+        const winnerDisplay = document.getElementById('winnerDisplay');
+        const resetBtn = document.getElementById('resetBtn');
+        const playerCountDisplay = document.getElementById('playerCountDisplay');
+
+        // ---------- RENDER BUZZERS ----------
+        function renderBuzzers() {
+            // Clear grid
+            gridEl.innerHTML = '';
+
+            // Update player count
+            playerCountDisplay.textContent = `👥 ${PLAYERS.length} players`;
+
+            // Create a button for each player
+            PLAYERS.forEach((player) => {
+                const btn = document.createElement('button');
+                btn.className = 'buzzer-btn';
+                btn.dataset.playerId = player.id;
+                btn.setAttribute('aria-label', `Buzzer for ${player.name}`);
+
+                // Inner HTML
+                btn.innerHTML = `
+                    <span class="buzz-icon">${player.emoji}</span>
+                    <span>${player.name}</span>
+                    <span class="player-name">${player.id}</span>
+                `;
+
+                // Add click handler
+                btn.addEventListener('click', (e) => handleBuzz(e, player.id));
+
+                gridEl.appendChild(btn);
+            });
+
+            // Apply current state (winner / disabled)
+            updateUI();
+        }
+
+        // ---------- HANDLE BUZZ ----------
+        function handleBuzz(event, playerId) {
+            // If already a winner or buzzer disabled, ignore
+            if (!buzzerEnabled || winnerId !== null) {
+                return;
+            }
+
+            // Set winner
+            winnerId = playerId;
+            buzzerEnabled = false;    // lock all buzzers
+
+            // Update UI to reflect winner
+            updateUI();
+
+            // (Optional) small haptic feedback for fun
+            if (navigator.vibrate) navigator.vibrate(20);
+        }
+
+        // ---------- UPDATE UI (winner highlight, disable, winner text) ----------
+        function updateUI() {
+            // Get all buzzer buttons
+            const buttons = gridEl.querySelectorAll('.buzzer-btn');
+            const winnerPlayer = PLAYERS.find(p => p.id === winnerId);
+
+            // 1. Reset all buttons to default (remove winner-highlight, disabled)
+            buttons.forEach(btn => {
+                btn.classList.remove('winner-highlight', 'disabled');
+            });
+
+            // 2. If there's a winner, highlight that button + disable all
+            if (winnerId !== null) {
+                // Disable all buttons (visually + functionally via CSS pointer-events)
+                buttons.forEach(btn => {
+                    btn.classList.add('disabled');
+                });
+
+                // Find winner button and highlight
+                buttons.forEach(btn => {
+                    if (btn.dataset.playerId === winnerId) {
+                        btn.classList.remove('disabled');   // still clickable but we ignore clicks
+                        btn.classList.add('winner-highlight');
+                    }
+                });
+
+                // Update winner display
+                if (winnerPlayer) {
+                    winnerDisplay.textContent = `${winnerPlayer.emoji} ${winnerPlayer.name}`;
+                    winnerDisplay.className = 'winner-display'; // remove 'waiting'
+                } else {
+                    // fallback (should not happen)
+                    winnerDisplay.textContent = `🏅 ${winnerId}`;
+                    winnerDisplay.className = 'winner-display';
+                }
+            } else {
+                // No winner: enable all buzzers, reset display
+                buttons.forEach(btn => {
+                    btn.classList.remove('disabled', 'winner-highlight');
+                });
+                winnerDisplay.textContent = '⌛ waiting...';
+                winnerDisplay.className = 'winner-display waiting';
+                // enable buzzer flag (if reset was called)
+                buzzerEnabled = true;
+            }
+
+            // Extra: if winner exists, also disable all clicks via flag (already handled in handleBuzz)
+            // but we also want to prevent any click that might slip through (e.g., if someone clicks fast)
+            // The handler checks buzzerEnabled and winnerId, so it's safe.
+        }
+
+        // ---------- RESET (new round) ----------
+        function resetGame() {
+            // Reset state
+            winnerId = null;
+            buzzerEnabled = true;
+
+            // Re-render UI to clean state
+            updateUI();
+
+            // Optional: re-enable all buttons (updateUI does it)
+            // small feedback
+            if (navigator.vibrate) navigator.vibrate(10);
+        }
+
+        // ---------- INIT ----------
+        function init() {
+            renderBuzzers();
+            // Ensure reset state
+            resetGame();
+
+            // Attach reset listener
+            resetBtn.addEventListener('click', resetGame);
+
+            // Optional: keyboard shortcut 'r' for reset
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'r' || e.key === 'R') {
+                    if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                        e.preventDefault();
+                        resetGame();
+                    }
+                }
+            });
+        }
+
+        // Start the app
+        init();
+
+        // Expose reset to console for debugging (optional)
+        window.resetBuzzer = resetGame;
+    })();
+</script>
+</body>
+</html>
